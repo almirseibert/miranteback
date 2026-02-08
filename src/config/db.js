@@ -2,26 +2,28 @@ const mysql = require('mysql2/promise');
 require('dotenv').config();
 
 const pool = mysql.createPool({
-    host: process.env.DB_HOST,      // Vai pegar 'sites_mirante'
-    port: process.env.DB_PORT,      // Vai pegar '3306'
-    user: process.env.DB_USER,      // 'mirante'
-    password: process.env.DB_PASSWORD, // A senha fornecida
-    database: process.env.DB_NAME,  // 'mirante'
+    host: process.env.DB_HOST,      // <--- Deve vir da variável
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT || 3306, // Usa 3306 se não tiver porta definida
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
-    charset: 'utf8mb4' // Importante para emojis 🍔
+    charset: 'utf8mb4'
 });
 
-// Teste de conexão silencioso (para não poluir logs de produção, mas útil para debug)
-(async () => {
-    try {
-        const connection = await pool.getConnection();
-        console.log(`✅ MySQL Conectado em: ${process.env.DB_HOST}`);
+// Log para debug (aparecerá no console do Easypanel para conferirmos)
+console.log(`Tentando conectar ao MySQL em: ${process.env.DB_HOST || 'HOST NÃO DEFINIDO'}`);
+
+pool.getConnection()
+    .then(connection => {
+        console.log('✅ MySQL Conectado com Sucesso!');
         connection.release();
-    } catch (err) {
-        console.error('❌ Falha na conexão MySQL:', err.message);
-    }
-})();
+    })
+    .catch(err => {
+        console.error(`❌ Erro Fatal MySQL: ${err.message}`);
+        // Não mate o processo aqui, deixe o Easypanel tentar reiniciar se necessário
+    });
 
 module.exports = pool;
